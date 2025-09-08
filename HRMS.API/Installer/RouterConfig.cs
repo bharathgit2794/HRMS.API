@@ -1,13 +1,24 @@
 ﻿namespace HRMS.API.Installer
 {
-    public class RouterConfig(IEndpointRouteBuilder router)
+    public static class RouterConfig
     {
-        private readonly IEndpointRouteBuilder _router = router;
-
-        public void AddRouterConfig()
+        public static void AddRouterConfig(this IServiceCollection services)
         {
-            //_router.MapEmployeeEndpoints();
-            //_router.MapLeaveEndpoints();
+            services.Scan(scan => scan
+                    .FromAssemblyOf<IRegisterEndpoints>()
+                    .AddClasses(classes => classes.AssignableTo<IRegisterEndpoints>())
+                    .AsImplementedInterfaces()
+                    .WithTransientLifetime());
+        }
+
+        public static void UseRouterConfig(this WebApplication app)
+        {
+            using var scope = app.Services.CreateScope();
+            var endpoints = scope.ServiceProvider.GetServices<IRegisterEndpoints>();
+            foreach (var ep in endpoints)
+            {
+                ep.RegisterEndpoints(app);
+            }
         }
     }
 }
